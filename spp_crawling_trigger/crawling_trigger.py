@@ -13,12 +13,7 @@ URLS = {
     "inventory_trans": "BI_INVT",
     "inventory_balance": "BI_INVB",
     "location": "BI_LOC"
-
 }
-
-
-# NOTE: HoangLe [Feb-07]: Must find a mechanism to dynamically assign this value
-MAX_PAGE_NO = 100
 
 
 def get_urls(
@@ -31,7 +26,8 @@ def get_urls(
     port: int = 9082,
     endpoint: str = "maxtest/oslc/os",
     pagesize: int = 500,
-    lean: int = 1
+    lean: int = 1,
+    max_pages: int = 200
 ) -> List[str]:
 
     out = []
@@ -46,7 +42,7 @@ def get_urls(
         orderby = where_con = None
 
     for name in api_names:
-        for pageno in range(1, MAX_PAGE_NO + 1):
+        for pageno in range(1, max_pages + 1):
             params = {
                 'lean': lean,
                 'pageno': pageno,
