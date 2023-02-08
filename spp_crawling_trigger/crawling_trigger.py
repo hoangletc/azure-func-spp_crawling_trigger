@@ -22,12 +22,13 @@ def get_urls(
     orderby: str = None,
     where_con: str = None,
     scheme: str = 'http',
-    ip: str = "10.100.60.130",
-    port: int = 9082,
+    ip: str = "10.100.62.26",
+    port: int = 80,
     endpoint: str = "maxtest/oslc/os",
     pagesize: int = 500,
     lean: int = 1,
-    max_pages: int = 200
+    start_page: int = 1,
+    max_page: int = 200
 ) -> List[str]:
 
     out = []
@@ -42,7 +43,7 @@ def get_urls(
         orderby = where_con = None
 
     for name in api_names:
-        for pageno in range(1, max_pages + 1):
+        for pageno in range(start_page, max_page + 1):
             params = {
                 'lean': lean,
                 'pageno': pageno,

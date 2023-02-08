@@ -20,6 +20,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         elif isinstance(req_raw, dict):
             req = req_raw
 
+        ip = req.headers.get('IP', "10.100.62.26")
+        port = req.headers.get('PORT', 80)
+
         assert isinstance(req, dict) \
             and 'res' in req \
             and isinstance(req['res'], str)
@@ -27,12 +30,13 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         orderby = req.get('orderby', None)
         where_con = req.get('where', None)
         pagesize = req.get('pagesize', 500)
-        max_pages = req.get('maxpages', 100)
+        start_page = req.get('startpage', 1)
+        max_page = req.get('maxpage', 1000)
         fields = req.get('fields', [])
         res = req['res']
 
-        urls = crt.get_urls(res, fields, orderby, where_con,
-                            pagesize=pagesize, max_pages=max_pages)
+        urls = crt.get_urls(res, fields, orderby, where_con, ip=ip, port=port,
+                            pagesize=pagesize, start_page=start_page, max_page=max_page)
 
         output = json.dumps(urls)
 
