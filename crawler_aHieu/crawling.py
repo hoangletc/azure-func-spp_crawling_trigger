@@ -17,13 +17,15 @@ NETWORK_CONF = {
         "ip": "10.100.60.130",
         "port":  9082,
         "key": "bWF4YWRtaW46MTIzNDU2",
-        "user": "maxauth"
+        "user": "maxauth",
+        "endpoint": "maxtest/oslc/os"
     },
     'prod': {
         "ip": "10.100.62.26",
         "port":  80,
         "key": "bWF4YWRtaW46U3B2YkAxMjM=",
-        "user": "maxauth"
+        "user": "maxauth",
+        "endpoint": "maximo/oslc/os"
     }
 }
 
@@ -35,6 +37,11 @@ with open(PATH_RES_INFO) as fp:
     RES_INFO = json.load(fp)
 
 
+async def test():
+    await asyncio.sleep(0.001)
+    return {'fdsfsd': 'fndskf'}
+
+
 def get_urls(
     res_name: str,
     fields: List[str],
@@ -43,7 +50,7 @@ def get_urls(
     scheme: str = 'http',
     ip: str = "10.100.62.26",
     port: int = 80,
-    endpoint: str = "maxtest/oslc/os",
+    endpoint: str = "maximo/oslc/os",
     pagesize: int = 1000,
     start_page: int = 1,
     max_page: int = 200,
@@ -82,7 +89,8 @@ def get_urls(
 
             out.append({
                 'url': url,
-                'params': params
+                'params': params,
+                'pageno': pageno
             })
 
     return out
@@ -94,23 +102,50 @@ def parse_args():
                         help='Max connections established to server')
     parser.add_argument('--profile', '-p', type=str, choices=['dev', 'prod'],
                         default="prod", help='Connection profile')
+    parser.add_argument('--resource', '-r', type=str,
+                        default="all", help='Crawled resource')
     parser.add_argument('--user', type=str, default=None, help='User')
     parser.add_argument('--key', type=str, default=None, help='Password')
     parser.add_argument('--ip', type=str, default=None, help='IP')
     parser.add_argument('--port', type=str, default=None, help='Port')
     parser.add_argument('--pagesize', type=int, default=1000, help='Page size')
     parser.add_argument('--pagenum', type=int, default=None, help='Page num')
+    parser.add_argument('--startpage', type=int, default=1, help='Start page')
     parser.add_argument('--preprocess', action=argparse.BooleanOptionalAction, help='Page num')
 
     return parser.parse_args()
 
 
-async def get_res(session, url_info, user: str, key: str):
+async def get_res(
+    session,
+    url_info,
+    res_name: str,
+    user: str,
+    key: str,
+    data_type: str = "raw"
+):
     url, params = url_info['url'], url_info['params']
     headers = {user: key}
 
-    async with session.get(url, params=params, headers=headers) as resp:
-        return await resp.json()
+    logging.info(f"Crawling: {url} - {url_info['pageno']}")
+
+    out = await test()
+
+    # async with session.get(url, params=params, headers=headers) as resp:
+    #     out = await resp.json(encoding='utf-8', content_type=False)
+
+    # Save data
+    if data_type == "raw":
+        output = {res_name: out}
+        save_output(output, url_info['pageno'], "raw")
+    else:
+        # TODO: HoangLe [Feb-08]: Implement later
+        pass
+
+    return {
+        'data': out,
+        'pagenum': url_info['pageno']
+    }
 
 
 def crawl(
@@ -119,13 +154,15 @@ def crawl(
     pagesize: int = 1000,
     start_page: int = 1,
     max_page: int = 200,
-    max_conn: int = 10
+    max_conn: int = 10,
+    data_type: str = "raw",
+    endpoint: str = "maximo/oslc/os"
 ):
     async def _trigger(url_infos):
         async with aiohttp.ClientSession() as session:
             tasks = [
-                asyncio.ensure_future(get_res(session, url_info,
-                                              profile['user'], profile['key']))
+                asyncio.ensure_future(get_res(session, url_info, res_name,
+                                              profile['user'], profile['key'], data_type))
                 for url_info in url_infos
             ]
 
@@ -136,7 +173,8 @@ def crawl(
     fields = RES_INFO[res_name]['fields']
 
     url_infos_total = get_urls(res_name, fields, ip=profile['ip'], port=profile['port'],
-                               pagesize=pagesize, start_page=start_page, max_page=max_page)
+                               pagesize=pagesize, start_page=start_page, max_page=max_page,
+                               endpoint=endpoint)
 
     output = []
     for i in range(0, len(url_infos_total), max_conn):
@@ -149,22 +187,22 @@ def crawl(
 
 def save_output(
     data: dict,
-    dtype: Literal["raw", "processed"]
+    pageno: int,
+    dtype: Literal["raw", "processed"] = "raw"
 ):
     # Create filename
     a = datetime.now()
     dt_s = a.strftime("%Y%m%d-%H%M%S")
 
-    for res_name, d in data.items():
-        filename = f"{res_name}_{dt_s}.json"
+    filename = f"{res_name}_{pageno:04d}_{dt_s}.json"
 
-        path_out: Path = PATH_ROOT_DATA / dtype / res_name / filename
-        path_out.parent.mkdir(exist_ok=True)
+    path_out: Path = PATH_ROOT_DATA / dtype / res_name / filename
+    path_out.parent.mkdir(parents=True, exist_ok=True)
 
-        path_out.write_text(
-            json.dumps(d, indent=2, ensure_ascii=False),
-            encoding='utf-8'
-        )
+    path_out.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False),
+        encoding='utf-8'
+    )
 
 
 if __name__ == '__main__':
@@ -178,28 +216,30 @@ if __name__ == '__main__':
     profile['port'] = args.port if args.port is not None else profile['port']
 
     # Start crawling
-    for res_name in RES_INFO.keys():
+    res_names = list(RES_INFO.keys()) if args.resource == "all" else [args.resource]
+    for res_name in res_names:
         logging.info(f"== Processing: {res_name}")
-        path_res = PATH_ROOT_DATA / 's'
+
+        path_out: Path = PATH_ROOT_DATA / "raw" / res_name
+
         max_page = args.pagenum if args.pagenum is not None \
             else RES_INFO[res_name]['pagenum']
 
         flag_not_enough = False
-        if not path_res.exists():
+        if not path_out.exists():
             flag_not_enough = True
-        elif len(list(path_res.glob("*.json"))) < max_page:
+
+        elif len(list(path_out.glob("*.json"))) < max_page:
             flag_not_enough = True
 
         if flag_not_enough is True:
-            start_page = len(list(path_res.glob("*.json"))) + 1
+            start_page = len(list(path_out.glob("*.json"))) + 1
+            dtype = "processed" if args.preprocess is True else "raw"
 
-            output = crawl(res_name, profile, args.pagesize,
-                           start_page, max_page, args.maxcon)
+            crawl(res_name, profile, args.pagesize,
+                  start_page, max_page, args.maxcon)
 
-            output = {res_name: output}
 
-        if args.preprocess is True:
-            pass
-            # TODO: HoangLe [Feb-08]: Implement later
-        else:
-            save_output(output, "raw")
+# Test one res:         python crawling.py -r BI_INVT --pagesize 1 --pagenum 1
+# Test multiple res:    python crawling.py -r all --pagesize 1 --pagenum 1
+# Run:                  python crawling.py
