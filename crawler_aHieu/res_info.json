@@ -1,23 +1,4 @@
 {
-  "BI_INVT": {
-    "pagenum": 1438,
-    "fields": [
-      "binnum",
-      "curbal",
-      "externalrefid",
-      "invtransid",
-      "Invuseline",
-      "itemnum",
-      "linecost",
-      "newcost",
-      "pagenum",
-      "siteid",
-      "storeloc",
-      "transdate",
-      "transtype",
-      "transtype_description"
-    ]
-  },
   "BI_ASSET": {
     "pagenum": 23,
     "fields": [
@@ -54,25 +35,8 @@
       "spvb_fixedassetnum",
       "status_description",
       "totalcost",
-      "totdowntime"
-    ]
-  },
-  "BI_INVE": {
-    "pagenum": 1124,
-    "fields": [
-      "category",
-      "costtype",
-      "inventoryid",
-      "issueunit",
-      "itemnum",
-      "lastissuedate",
-      "location",
-      "minlevel",
-      "onorder",
-      "orderunit",
-      "siteid",
-      "status",
-      "status_description"
+      "totdowntime",
+      "description"
     ]
   },
   "BI_ITEM": {
@@ -241,7 +205,7 @@
       "invuseline.fromstoreloc",
       "invuseline.refwo",
       "invuseline.linecost",
-      "invuseline.pagenum",
+      "invuseline.quantity",
       "invuseline.invuselinenum",
       "invuseline.itemnum",
       "invuseline.itemsetid",
@@ -262,13 +226,51 @@
       "orgid",
       "ponum",
       "qtyrequested",
-      "pagenum",
+      "quantity",
       "refwo",
       "storeloc",
       "tositeid",
       "transdate",
       "unitcost",
       "actualdate"
+    ]
+  },
+  "BI_INVE": {
+    "pagenum": 1124,
+    "fields": [
+      "category",
+      "costtype",
+      "inventoryid",
+      "issueunit",
+      "itemnum",
+      "lastissuedate",
+      "location",
+      "minlevel",
+      "maxlevel",
+      "onorder",
+      "orderunit",
+      "siteid",
+      "status",
+      "status_description"
+    ]
+  },
+  "BI_INVT": {
+    "pagenum": 1438,
+    "fields": [
+      "binnum",
+      "curbal",
+      "externalrefid",
+      "invtransid",
+      "invuseline",
+      "itemnum",
+      "linecost",
+      "newcost",
+      "pagenum",
+      "siteid",
+      "storeloc",
+      "transdate",
+      "transtype",
+      "transtype_description"
     ]
   }
 }

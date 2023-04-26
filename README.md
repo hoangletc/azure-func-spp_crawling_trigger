@@ -2,12 +2,10 @@
 
 ## 1.Input
 
-Note that every inputs must follow OSLC format.
-
 ```
 {
-    'res': 'inventory' | 'all',
-    'orderby' : '+matuse' | null,
-    'where' : 'trans>="2021-01-01"' | null,
+
+    'res': 'BI_INVE' | ['BI_INVE', 'BI_MATU'] | 'all',
+    'env': 'dev' | 'prod'
 }
 ```

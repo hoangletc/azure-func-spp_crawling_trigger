@@ -4,3 +4,6 @@
 
 azure-functions
 requests
+pytz
+azure-storage-blob
+aiohttp

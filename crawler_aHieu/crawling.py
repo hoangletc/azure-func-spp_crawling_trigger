@@ -129,10 +129,8 @@ async def get_res(
 
     logging.info(f"Crawling: {url} - {url_info['pageno']}")
 
-    out = await test()
-
-    # async with session.get(url, params=params, headers=headers) as resp:
-    #     out = await resp.json(encoding='utf-8', content_type=False)
+    async with session.get(url, params=params, headers=headers) as resp:
+        out = await resp.json(encoding='utf-8', content_type=False)
 
     # Save data
     if data_type == "raw":
@@ -158,17 +156,23 @@ def crawl(
     data_type: str = "raw",
     endpoint: str = "maximo/oslc/os"
 ):
-    async def _trigger(url_infos):
+    async def _trigger(url_infos_total):
+        output = []
         async with aiohttp.ClientSession() as session:
-            tasks = [
-                asyncio.ensure_future(get_res(session, url_info, res_name,
-                                              profile['user'], profile['key'], data_type))
-                for url_info in url_infos
-            ]
+            for i in range(0, len(url_infos_total), max_conn):
+                url_infos = url_infos_total[i:i+max_conn]
 
-            out = await asyncio.gather(*tasks)
+                tasks = [
+                    asyncio.ensure_future(get_res(session, url_info, res_name,
+                                                  profile['user'], profile['key'], data_type))
+                    for url_info in url_infos
+                ]
 
-            return out
+                out = await asyncio.gather(*tasks)
+
+                output.append(out)
+
+        return output
 
     fields = RES_INFO[res_name]['fields']
 
@@ -176,11 +180,7 @@ def crawl(
                                pagesize=pagesize, start_page=start_page, max_page=max_page,
                                endpoint=endpoint)
 
-    output = []
-    for i in range(0, len(url_infos_total), max_conn):
-        out = asyncio.run(_trigger(url_infos_total[i:i+max_conn]))
-
-        output.extend(out)
+    output = asyncio.run(_trigger(url_infos_total))
 
     return output
 
@@ -216,6 +216,10 @@ if __name__ == '__main__':
     profile['port'] = args.port if args.port is not None else profile['port']
 
     # Start crawling
+    start = datetime.now()
+    ds = start.strftime(r"%Y-%m-%d %H:%M:%S")
+    logging.info(f"Start crawling at: {ds}")
+
     res_names = list(RES_INFO.keys()) if args.resource == "all" else [args.resource]
     for res_name in res_names:
         logging.info(f"== Processing: {res_name}")
@@ -237,7 +241,15 @@ if __name__ == '__main__':
             dtype = "processed" if args.preprocess is True else "raw"
 
             crawl(res_name, profile, args.pagesize,
-                  start_page, max_page, args.maxcon)
+                  start_page, max_page, args.maxcon, endpoint=profile['endpoint'])
+
+    # Stop crawling
+    stop = datetime.now()
+    ds = stop.strftime(r"%Y-%m-%d %H:%M:%S")
+    logging.info(f"Stop crawling at: {ds}")
+
+    ds = (stop - start).strftime(r"%Y-%m-%d %H:%M:%S")
+    logging.info(f"== Total crawling time: {ds}")
 
 
 # Test one res:         python crawling.py -r BI_INVT --pagesize 1 --pagenum 1
