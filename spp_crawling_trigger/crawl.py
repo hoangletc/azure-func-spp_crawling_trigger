@@ -57,7 +57,6 @@ def get_urls(
 
             if is_date_filter is True:
                 start_crawling_date = (datetime.now() + timedelta(days=-2)).isoformat()
-                # params['oslc.where'] = f"{changedate}>\"{start_crawling_date}\""
                 tail = tail + f"&oslc.where={changedate}>\"{start_crawling_date}\""
 
             url = f"{scheme}://{ip}:{ports[i_port]}/{endpoint}/{name}/?{signal['url']}{tail}"
