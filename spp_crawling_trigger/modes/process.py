@@ -1,7 +1,5 @@
 import json
 import re
-import secrets
-import string
 from datetime import datetime, timedelta
 from typing import Iterable, List, Union
 
@@ -17,16 +15,6 @@ def _get_dt_str(option: int = 1):
         return a.strftime("%Y%m%d")
     elif option == 2:
         return a.strftime("%H%M%S")
-
-
-def _gen_filename_storing(n: int = 5) -> str:
-    rand_str = "".join(
-        secrets.choice(string.ascii_uppercase + string.digits) for i in range(n)
-    )
-
-    filename = f"{_get_dt_str(2)}_{rand_str}.json"
-
-    return filename
 
 
 def _download_blob(container_name: str, blob_name: str) -> List[dict]:
@@ -241,7 +229,12 @@ def processing(signal_info: dict, conf: dict, body: dict):
         processed = _parser(signal, data["member"], signal_info)
 
         # Store file
+        pat = r"page_(\d+)_.*\.json"
+        re.findall(pat, blob)[0]
         for signal_name, d in processed.items():
-            store_filename = f"{conf['storage']['processed']}/{signal_name}/{_get_dt_str(1)}/{_gen_filename_storing()}"
+            store_filename = (
+                f"{conf['storage']['processed']}/{signal_name}/{_get_dt_str(1)}"
+                "/page_{pagenum}_{_get_dt_str(2)}.json"
+            )
 
             _save_blob(d, store_filename, conf["storage"]["container"])
