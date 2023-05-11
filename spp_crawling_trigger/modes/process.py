@@ -18,9 +18,7 @@ def _get_dt_str(option: int = 1):
 
 
 def _download_blob(container_name: str, blob_name: str) -> List[dict]:
-    client = BlobClient.from_connection_string(
-        CONNECTION_STR, container_name=container_name, blob_name=blob_name
-    )
+    client = BlobClient.from_connection_string(CONNECTION_STR, container_name=container_name, blob_name=blob_name)
 
     data = client.download_blob().readall()
     return json.loads(data)
@@ -29,9 +27,7 @@ def _download_blob(container_name: str, blob_name: str) -> List[dict]:
 def _save_blob(data: Union[dict, list], filename: str, path_store: str):
     # Establish connection
     blob_service_client = BlobServiceClient.from_connection_string(CONNECTION_STR)
-    blob_client = blob_service_client.get_blob_client(
-        container=path_store, blob=filename
-    )
+    blob_client = blob_service_client.get_blob_client(container=path_store, blob=filename)
 
     # Convert str to binary
     data_encoded = bytes(json.dumps(data, indent=2, ensure_ascii=False), "utf-8")
@@ -45,9 +41,7 @@ def _list_blob(signal: str, conf: dict) -> Iterable[str]:
 
     tag = rf"{conf['storage']['raw']}/{today}/{signal}/.+\.json"
 
-    client = ContainerClient.from_connection_string(
-        CONNECTION_STR, container_name=conf["storage"]["container"]
-    )
+    client = ContainerClient.from_connection_string(CONNECTION_STR, container_name=conf["storage"]["container"])
 
     valid_blobs = []
     for path in client.list_blob_names():
@@ -73,9 +67,7 @@ def save_file(data: Union[dict, list], filename: str, path_store: str, conf: dic
         ]
     )
     blob_service_client = BlobServiceClient.from_connection_string(conn_str)
-    blob_client = blob_service_client.get_blob_client(
-        container=path_store, blob=filename
-    )
+    blob_client = blob_service_client.get_blob_client(container=path_store, blob=filename)
 
     # Convert str to binary
     data_encoded = bytes(json.dumps(data, indent=2, ensure_ascii=False), "utf-8")
@@ -230,11 +222,9 @@ def processing(signal_info: dict, conf: dict, body: dict):
 
         # Store file
         pat = r"page_(\d+)_.*\.json"
-        re.findall(pat, blob)[0]
+        pagenum = re.findall(pat, blob)[0]
+
         for signal_name, d in processed.items():
-            store_filename = (
-                f"{conf['storage']['processed']}/{signal_name}/{_get_dt_str(1)}"
-                "/page_{pagenum}_{_get_dt_str(2)}.json"
-            )
+            store_filename = f"{conf['storage']['processed']}/{signal_name}/{_get_dt_str(1)}/page_{pagenum}_{_get_dt_str(2)}.json"  # noqa: E501
 
             _save_blob(d, store_filename, conf["storage"]["container"])

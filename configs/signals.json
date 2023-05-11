@@ -331,7 +331,7 @@
     "prober_field": "servrectransid"
   },
   "BI_WO": {
-    "api_name": "BI_WO",
+    "api_name": "BI_WO_01",
     "fields": [
       "schedstart_org",
       "schedfinish_org",
@@ -363,15 +363,23 @@
       "wonum",
       "wopriority",
       "worktype",
-      "wostatus",
-      "person",
-      "wostatus"
+      "person"
     ],
     "changedate": "reportdate",
     "pagesize": 3000,
     "prober_field": "workorderid"
   },
   "BI_WOSTATUS": {
-    "fields": ["wostatusid", "changedate", "status", "parent"]
+    "api_name": "BI_WO_02",
+    "fields": [
+      "wostatusid",
+      "changedate",
+      "status",
+      "parent",
+      "wonum",
+      "siteid"
+    ],
+    "pagesize": 3000,
+    "prober_field": "wostatusid"
   }
 }
