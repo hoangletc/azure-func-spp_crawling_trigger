@@ -33,8 +33,6 @@
       "invuse",
       "invuseline"
     ],
-    "incremental_field": "actualdate",
-    "pagesize": 3000,
     "prober_field": "matusetransid"
   },
   "BI_INVU": {
@@ -116,8 +114,6 @@
       "status_description",
       "changedate"
     ],
-    "changedate": "changedate",
-    "pagesize": 3000,
     "prober_field": "itemid"
   },
   "BI_ASSET": {
@@ -144,8 +140,6 @@
       "spvb_costcenter",
       "isrunning"
     ],
-    "changedate": "changedate",
-    "pagesize": 100,
     "prober_field": "assetuid"
   },
   "BI_ASSETSTATUS": {
@@ -171,8 +165,6 @@
       "spvb_pa",
       "spvb_l"
     ],
-    "changedate": "changedate",
-    "pagesize": 3000,
     "prober_field": "assetstatusid"
   },
   "BI_ASSETANCESTOR": {
@@ -196,10 +188,9 @@
       "siteid",
       "status",
       "changedate",
-      "status_description"
+      "status_description",
+      "spvb_lackspp"
     ],
-    "changedate": "lastissuedate",
-    "pagesize": 3000,
     "prober_field": "inventoryid"
   },
   "BI_INVT": {
@@ -220,8 +211,6 @@
       "transtype",
       "transtype_description"
     ],
-    "changedate": "transdate",
-    "pagesize": 3000,
     "prober_field": "invtransid"
   },
   "BI_LOC": {
@@ -236,8 +225,6 @@
       "siteid",
       "description"
     ],
-    "changedate": "statusdate",
-    "pagesize": 3000,
     "prober_field": "locationsid"
   },
   "BI_MATR": {
@@ -286,8 +273,6 @@
       "invuse",
       "invuseline"
     ],
-    "changedate": "actualdate",
-    "pagesize": 3000,
     "prober_field": "matrectransid"
   },
   "BI_SERV": {
@@ -326,8 +311,6 @@
       "transdate",
       "unitcost"
     ],
-    "changedate": "transdate",
-    "pagesize": 3000,
     "prober_field": "servrectransid"
   },
   "BI_WO": {
@@ -366,21 +349,9 @@
       "person",
       "wostatus"
     ],
-    "changedate": "reportdate",
-    "pagesize": 3000,
     "prober_field": "workorderid"
   },
   "BI_WOSTATUS": {
-    "api_name": "BI_WO_02",
-    "fields": [
-      "wostatusid",
-      "changedate",
-      "status",
-      "parent",
-      "wonum",
-      "siteid"
-    ],
-    "pagesize": 3000,
-    "prober_field": "wostatusid"
+    "fields": ["wostatusid", "changedate", "status", "parent", "workorderid"]
   }
 }

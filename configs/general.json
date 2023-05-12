@@ -16,10 +16,18 @@
     "scheme": "http"
   },
   "storage": {
-    "DefaultEndpointsProtocol": "https",
-    "AccountName": "spvbstoragedevv2",
-    "AccountKey": "mnql8TSM53Myn/rHlSiVMTSpXz9zL1oUnv3U8tIvtVIsHRELVjMPjwRU2qj58V7w+zevlopk8X2vrqxqb+OSUA==",
-    "EndpointSuffix": "core.windows.net",
+    "dev": {
+      "DefaultEndpointsProtocol": "https",
+      "AccountName": "spvbstoragedevv2",
+      "AccountKey": "mnql8TSM53Myn/rHlSiVMTSpXz9zL1oUnv3U8tIvtVIsHRELVjMPjwRU2qj58V7w+zevlopk8X2vrqxqb+OSUA==",
+      "EndpointSuffix": "core.windows.net"
+    },
+    "prod": {
+      "DefaultEndpointsProtocol": "https",
+      "AccountName": "spvbstorageprodv2",
+      "AccountKey": "X3dyQa1+cxOlZOL+DUmxb7KFR9/JKMzW3c1vIhKjveXuucW5C6g13HWvOsVYnEaof2IdkYpkxi528tEukclWSQ==",
+      "EndpointSuffix": "core.windows.net"
+    },
     "container": "spp",
     "raw": "cmms/raw",
     "processed": "cmms/processed"

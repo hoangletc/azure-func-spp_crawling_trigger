@@ -5,7 +5,20 @@ from typing import Iterable, List, Union
 
 from azure.storage.blob import BlobClient, BlobServiceClient, ContainerClient
 
-CONNECTION_STR = "DefaultEndpointsProtocol=https;AccountName=spvbstoragedevv2;AccountKey=mnql8TSM53Myn/rHlSiVMTSpXz9zL1oUnv3U8tIvtVIsHRELVjMPjwRU2qj58V7w+zevlopk8X2vrqxqb+OSUA==;EndpointSuffix=core.windows.net"
+# CONNECTION_STR = "DefaultEndpointsProtocol=https;AccountName=spvbstoragedevv2;AccountKey=mnql8TSM53Myn/rHlSiVMTSpXz9zL1oUnv3U8tIvtVIsHRELVjMPjwRU2qj58V7w+zevlopk8X2vrqxqb+OSUA==;EndpointSuffix=core.windows.net"
+
+
+def _gen_con_str(conf: dict, environment: str):
+    conf_env = conf[environment]
+
+    return ";".join(
+        [
+            f"DefaultEndpointsProtocol={conf_env['DefaultEndpointsProtocol']}",
+            f"AccountName={conf_env['AccountName']}",
+            f"AccountKey={conf_env['AccountKey']}",
+            f"EndpointSuffix={conf_env['EndpointSuffix']}",
+        ]
+    )
 
 
 def _get_dt_str(option: int = 1):
@@ -17,55 +30,15 @@ def _get_dt_str(option: int = 1):
         return a.strftime("%H%M%S")
 
 
-def _download_blob(container_name: str, blob_name: str) -> List[dict]:
-    client = BlobClient.from_connection_string(CONNECTION_STR, container_name=container_name, blob_name=blob_name)
+def _download_blob(container_name: str, blob_name: str, conn_str: str) -> List[dict]:
+    client = BlobClient.from_connection_string(conn_str, container_name=container_name, blob_name=blob_name)
 
     data = client.download_blob().readall()
     return json.loads(data)
 
 
-def _save_blob(data: Union[dict, list], filename: str, path_store: str):
+def _save_blob(data: Union[dict, list], filename: str, path_store: str, conn_str: str):
     # Establish connection
-    blob_service_client = BlobServiceClient.from_connection_string(CONNECTION_STR)
-    blob_client = blob_service_client.get_blob_client(container=path_store, blob=filename)
-
-    # Convert str to binary
-    data_encoded = bytes(json.dumps(data, indent=2, ensure_ascii=False), "utf-8")
-
-    # Write to Azure Blob
-    blob_client.upload_blob(data_encoded, blob_type="BlockBlob", overwrite=True)
-
-
-def _list_blob(signal: str, conf: dict) -> Iterable[str]:
-    today = (datetime.utcnow() + timedelta(hours=7)).strftime("%Y-%m-%d")
-
-    tag = rf"{conf['storage']['raw']}/{today}/{signal}/.+\.json"
-
-    client = ContainerClient.from_connection_string(CONNECTION_STR, container_name=conf["storage"]["container"])
-
-    valid_blobs = []
-    for path in client.list_blob_names():
-        if re.findall(tag, path) != []:
-            valid_blobs.append(path)
-
-    return valid_blobs
-
-
-def save_file(data: Union[dict, list], filename: str, path_store: str, conf: dict):
-    # Establish connection
-    assert "DefaultEndpointsProtocol" in conf
-    assert "AccountName" in conf
-    assert "AccountKey" in conf
-    assert "EndpointSuffix" in conf
-
-    conn_str = ";".join(
-        [
-            f"DefaultEndpointsProtocol={conf['DefaultEndpointsProtocol']}",
-            f"AccountName={conf['AccountName']}",
-            f"AccountKey={conf['AccountKey']}",
-            f"EndpointSuffix={conf['EndpointSuffix']}",
-        ]
-    )
     blob_service_client = BlobServiceClient.from_connection_string(conn_str)
     blob_client = blob_service_client.get_blob_client(container=path_store, blob=filename)
 
@@ -74,6 +47,21 @@ def save_file(data: Union[dict, list], filename: str, path_store: str, conf: dic
 
     # Write to Azure Blob
     blob_client.upload_blob(data_encoded, blob_type="BlockBlob", overwrite=True)
+
+
+def _list_blob(signal: str, conf: dict, conn_str: str) -> Iterable[str]:
+    today = (datetime.utcnow() + timedelta(hours=7)).strftime("%Y-%m-%d")
+
+    tag = rf"{conf['storage']['raw']}/{today}/{signal}/.+\.json"
+
+    client = ContainerClient.from_connection_string(conn_str, container_name=conf["storage"]["container"])
+
+    valid_blobs = []
+    for path in client.list_blob_names():
+        if re.findall(tag, path) != []:
+            valid_blobs.append(path)
+
+    return valid_blobs
 
 
 def _parser(name: str, d: List[dict], signal_info: dict) -> dict:
@@ -208,14 +196,18 @@ def _parser(name: str, d: List[dict], signal_info: dict) -> dict:
 
 def processing(signal_info: dict, conf: dict, body: dict):
     signal = body.get("signal")
+    env = body.get("environment", "dev")
+    body.get("container", "spp")
 
+    assert env in ["dev", "prod"]
     assert signal is not None, "Field 'signal' not specified"
 
     # Establish all valid paths
-    valid_blobs = _list_blob(signal, conf)
+    conn_str = _gen_con_str(conf, env)
+    valid_blobs = _list_blob(signal, conf, conn_str)
 
     for blob in valid_blobs:
-        data = _download_blob(conf["storage"]["container"], blob)
+        data = _download_blob(conf["storage"]["container"], blob, conn_str)
 
         # Process
         processed = _parser(signal, data["member"], signal_info)
@@ -227,4 +219,4 @@ def processing(signal_info: dict, conf: dict, body: dict):
         for signal_name, d in processed.items():
             store_filename = f"{conf['storage']['processed']}/{signal_name}/{_get_dt_str(1)}/page_{pagenum}_{_get_dt_str(2)}.json"  # noqa: E501
 
-            _save_blob(d, store_filename, conf["storage"]["container"])
+            _save_blob(d, store_filename, conf["storage"]["container"], conn_str)
