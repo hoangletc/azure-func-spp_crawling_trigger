@@ -69,3 +69,21 @@ This module reads file from BlobStorage, processes and stores back to Blob.
     "signal": <from environment argument>
 }
 ```
+
+
+## 3. List các API có thể crawl
+```
+[
+    BI_MATU,
+    BI_MATR,
+    BI_ITEM,
+    BI_ASSET,
+    BI_ASSETSTATUS,
+    BI_INVE,
+    BI_INVT,
+    BI_LOC,
+    BI_SERV,
+    BI_WO,
+    BI_WOSTATUS
+]
+```

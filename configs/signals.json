@@ -331,7 +331,7 @@
     "prober_field": "servrectransid"
   },
   "BI_WO": {
-    "api_name": "BI_WO_01",
+    "api_name": "BI_WO",
     "fields": [
       "schedstart_org",
       "schedfinish_org",
@@ -363,7 +363,8 @@
       "wonum",
       "wopriority",
       "worktype",
-      "person"
+      "person",
+      "wostatus"
     ],
     "changedate": "reportdate",
     "pagesize": 3000,
