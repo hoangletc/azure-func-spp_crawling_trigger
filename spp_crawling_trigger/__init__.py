@@ -31,8 +31,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             out = modes.gen_crawling_conf(signal_info, body)
             out = json.dumps(out, ensure_ascii=False, indent=2)
         elif mode_funcapp == "processing":
-            modes.processing(signal_info, conf, body)
-            out = None
+            out = modes.processing(signal_info, conf, body)
+            out = json.dumps(out, ensure_ascii=False, indent=2)
         else:
             raise NotImplementedError()
         status_code = 200

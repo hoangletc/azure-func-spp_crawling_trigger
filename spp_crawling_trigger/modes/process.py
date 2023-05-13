@@ -9,7 +9,7 @@ from azure.storage.blob import BlobClient, BlobServiceClient, ContainerClient
 
 
 def _gen_con_str(conf: dict, environment: str):
-    conf_env = conf[environment]
+    conf_env = conf["storage"][environment]
 
     return ";".join(
         [
@@ -194,13 +194,25 @@ def _parser(name: str, d: List[dict], signal_info: dict) -> dict:
     return out
 
 
-def processing(signal_info: dict, conf: dict, body: dict):
+def _find_maxrowstamp(d: List[dict]) -> int:
+    max_rowstamp = 0
+
+    for r in d:
+        if int(r["_rowstamp"]) > max_rowstamp:
+            max_rowstamp = int(r["_rowstamp"])
+
+    return max_rowstamp
+
+
+def processing(signal_info: dict, conf: dict, body: dict) -> List[dict]:
     signal = body.get("signal")
     env = body.get("environment", "dev")
     body.get("container", "spp")
 
     assert env in ["dev", "prod"]
     assert signal is not None, "Field 'signal' not specified"
+
+    last_rowstamp = {}
 
     # Establish all valid paths
     conn_str = _gen_con_str(conf, env)
@@ -220,3 +232,16 @@ def processing(signal_info: dict, conf: dict, body: dict):
             store_filename = f"{conf['storage']['processed']}/{signal_name}/{_get_dt_str(1)}/page_{pagenum}_{_get_dt_str(2)}.json"  # noqa: E501
 
             _save_blob(d, store_filename, conf["storage"]["container"], conn_str)
+
+            # Update last_rowstamp
+            max_rowstamp = _find_maxrowstamp(d)
+
+            if signal_name not in last_rowstamp:
+                last_rowstamp[signal_name] = max_rowstamp
+            elif max_rowstamp > last_rowstamp[signal_name]:
+                last_rowstamp[signal_name] = max_rowstamp
+
+    # Make up output
+    list_max_rowstamp = [{"signal": k, "max_rowstamp": v} for k, v in last_rowstamp.items()]
+
+    return list_max_rowstamp
