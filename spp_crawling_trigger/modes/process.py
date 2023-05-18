@@ -1,11 +1,10 @@
 import json
 import re
+import threading
 from datetime import datetime, timedelta
-from typing import Iterable, List, Union
+from typing import List, Union
 
 from azure.storage.blob import BlobClient, BlobServiceClient, ContainerClient
-
-# CONNECTION_STR = "DefaultEndpointsProtocol=https;AccountName=spvbstoragedevv2;AccountKey=mnql8TSM53Myn/rHlSiVMTSpXz9zL1oUnv3U8tIvtVIsHRELVjMPjwRU2qj58V7w+zevlopk8X2vrqxqb+OSUA==;EndpointSuffix=core.windows.net"
 
 
 def _gen_con_str(conf: dict, environment: str):
@@ -49,8 +48,10 @@ def _save_blob(data: Union[dict, list], filename: str, path_store: str, conn_str
     blob_client.upload_blob(data_encoded, blob_type="BlockBlob", overwrite=True)
 
 
-def _list_blob(signal: str, conf: dict, conn_str: str) -> Iterable[str]:
-    today = (datetime.utcnow() + timedelta(hours=7)).strftime("%Y-%m-%d")
+def _list_blob(signal: str, conf: dict, conn_str: str) -> List[str]:
+    # FIXME: HoangLe [May-18]: uncomment the following and delete the one after
+    # today = (datetime.utcnow() + timedelta(hours=7)).strftime("%Y-%m-%d")
+    today = "2023-05-15"
 
     tag = rf"{conf['storage']['raw']}/{today}/{signal}/.+\.json"
 
@@ -212,10 +213,54 @@ def _find_maxrowstamp(d: List[dict]) -> int:
     return max_rowstamp
 
 
+class ThreadProcessing(threading.Thread):
+    def __init__(self, idx: int, n_split: int, valid_blobs: List[str], conn_str: str, signal: str, conf: dict, signal_info: dict):
+        threading.Thread.__init__(self)
+
+        self.last_rowstamp = {}
+        self._conn_str = conn_str
+        self._signal = signal
+        self._conf = conf
+        self._signal_info = signal_info
+
+        n = len(valid_blobs) // n_split
+        if idx < n_split - 1:
+            self.blobs = valid_blobs[idx * n : (idx + 1) * n]
+        else:
+            self.blobs = valid_blobs[idx * n :]
+
+    def run(self):
+        for blob in self.blobs:
+            data = _download_blob(self._conf["storage"]["container"], blob, self._conn_str)
+
+            # Process
+            processed = _parser(self._signal, data["member"], self._signal_info)
+
+            # Store file
+            pat = r"page_(\d+)_.*\.json"
+            pagenum = re.findall(pat, blob)[0]
+
+            for signal_name, d in processed.items():
+                # Save backup
+                # store_filename = f"{self._conf['storage']['processed']}/{signal_name}/{_get_dt_str(1)}/page_{pagenum}_{_get_dt_str(2)}.json"  # noqa: E501
+                # _save_blob(d, store_filename, self._conf["storage"]["container"], self._conn_str)
+
+                # Save for later loading
+                store_filename = f"{signal_name}/now/page_{pagenum}_{_get_dt_str(1)}_{_get_dt_str(2)}.json"
+                _save_blob(d, store_filename, self._conf["storage"]["container"], self._conn_str)
+
+                # Update last_rowstamp
+                max_rowstamp = _find_maxrowstamp(d)
+
+                if signal_name not in self.last_rowstamp:
+                    self.last_rowstamp[signal_name] = max_rowstamp
+                elif max_rowstamp > self.last_rowstamp[signal_name]:
+                    self.last_rowstamp[signal_name] = max_rowstamp
+
+
 def processing(signal_info: dict, conf: dict, body: dict) -> List[dict]:
     signal = body.get("signal")
     env = body.get("environment", "dev")
-    body.get("container", "spp")
 
     assert env in ["dev", "prod"]
     assert signal is not None, "Field 'signal' not specified"
@@ -226,34 +271,19 @@ def processing(signal_info: dict, conf: dict, body: dict) -> List[dict]:
     conn_str = _gen_con_str(conf, env)
     valid_blobs = _list_blob(signal, conf, conn_str)
 
-    for blob in valid_blobs:
-        data = _download_blob(conf["storage"]["container"], blob, conn_str)
+    threads = [ThreadProcessing(i, 5, valid_blobs, conn_str, signal, conf, signal_info) for i in range(8)]
 
-        # Process
-        processed = _parser(signal, data["member"], signal_info)
-
-        # Store file
-        pat = r"page_(\d+)_.*\.json"
-        pagenum = re.findall(pat, blob)[0]
-
-        for signal_name, d in processed.items():
-            # Save backup
-            store_filename = f"{conf['storage']['processed']}/{signal_name}/{_get_dt_str(1)}/page_{pagenum}_{_get_dt_str(2)}.json"  # noqa: E501
-            _save_blob(d, store_filename, conf["storage"]["container"], conn_str)
-
-            # Save for later loading
-            store_filename = f"{signal_name}/now/page_{pagenum}_{_get_dt_str(1)}_{_get_dt_str(2)}.json"
-            _save_blob(d, store_filename, conf["storage"]["container"], conn_str)
-
-            # Update last_rowstamp
-            max_rowstamp = _find_maxrowstamp(d)
-
-            if signal_name not in last_rowstamp:
-                last_rowstamp[signal_name] = max_rowstamp
-            elif max_rowstamp > last_rowstamp[signal_name]:
-                last_rowstamp[signal_name] = max_rowstamp
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
 
     # Make up output
+    last_rowstamp = {}
+    for t in threads:
+        for s, rs in t.last_rowstamp.items():
+            if s not in last_rowstamp or last_rowstamp[s] < rs:
+                last_rowstamp[s] = rs
     list_max_rowstamp = [{"signal": k, "max_rowstamp": v} for k, v in last_rowstamp.items()]
 
     return list_max_rowstamp
