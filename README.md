@@ -2,22 +2,10 @@
 
 ## 0. Introduction
 
-## 1. Version
 
-#### v1.2: <Future>
-- Module 'prober' implicitly calls Web --> to reduce components in Function app
+## 1. Input
 
-#### v1.1: (Developing)
-- Attach Experimental module(Copy data module) to get over 4MB issue of Web module
-- Combine all code (prober, url creator, preprocess) into one single function app
-- Module probing can estimate pagesize with probing URL having pagesize = 1
-
-
-#### v1.0: Apr 26
-
-## 2. Input
-
-### 2.1. Mode: 'quantity_prober'
+### 1.1. Mode: 'quantity_prober'
 
 
 ```
@@ -33,7 +21,7 @@
 }
 ```
 
-### 2.2. Mode: 'crawling_config_generator'
+### 1.2. Mode: 'crawling_config_generator'
 INPUT:
 ```
 {
@@ -60,19 +48,42 @@ OUTPUT:
 ]
 ```
 
-### 2.3. Mode: 'processing'
-This module reads file from BlobStorage, processes and stores back to Blob.
+### 1.3. Mode: 'gen_blobpath'
+This module lists out all paths to raw files.
 
 ```
 {
-    "mode_funcapp": "processing",
+    "mode_funcapp": "gen_blobpath",
     "environment": <from environment argument> | prod,
     "signal": <from environment argument>
 }
 ```
 
 
-## 3. List các API có thể crawl
+### 1.4. Mode: 'processing'
+This module reads file from BlobStorage from given blob path, processes and stores back to Blob.
+
+```
+{
+    "mode_funcapp": "processing",
+    "blob": <output from previous stage> | "cmms/raw/2023-05-15/BI_WO/page_100_17:50:37:91.json"
+    "environment": <from environment argument> | prod,
+    "signal": <from environment argument>
+}
+```
+
+### 1.5. Mode: 'collect_maxrowstamp'
+This module reads all rowstamp configuration files.
+
+```
+{
+    "mode_funcapp": "collect_rowstamp",
+    "environment": <from environment argument> | prod
+}
+
+
+
+## 2. List các API có thể crawl
 ```
 [
     'BI_MATU',
