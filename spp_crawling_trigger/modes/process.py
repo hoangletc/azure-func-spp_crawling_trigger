@@ -126,6 +126,8 @@ def _parser(name: str, d: List[dict], signal_info: dict) -> dict:
                     x["invuse"] = [x["invuse"]]
                 for x1 in x["invuse"]:
                     p = parse(x1, signal_info["BI_INVU"]["fields"])
+                    p["from"] = "MATU"
+
                     out["BI_INVU"].append(p)
 
             if "invuseline" in x:
@@ -136,6 +138,8 @@ def _parser(name: str, d: List[dict], signal_info: dict) -> dict:
                     x["invuseline"] = [x["invuseline"]]
                 for x1 in x["invuseline"]:
                     p = parse(x1, signal_info["BI_INVUL"]["fields"])
+                    p["from"] = "MATU"
+
                     out["BI_INVUL"].append(p)
 
             out[name].append(p_matu)
@@ -156,6 +160,8 @@ def _parser(name: str, d: List[dict], signal_info: dict) -> dict:
                     x["invuse"] = [x["invuse"]]
                 for x1 in x["invuse"]:
                     p = parse(x1, signal_info["BI_INVU"]["fields"])
+                    p["from"] = "MATR"
+
                     out["BI_INVU"].append(p)
             if "invuseline" in x:
                 if "invuseline" in p_matr:
@@ -165,6 +171,8 @@ def _parser(name: str, d: List[dict], signal_info: dict) -> dict:
                     x["invuseline"] = [x["invuseline"]]
                 for x1 in x["invuseline"]:
                     p = parse(x1, signal_info["BI_INVUL"]["fields"])
+                    p["from"] = "MATR"
+
                     out["BI_INVUL"].append(p)
 
             out[name].append(p_matr)
@@ -229,8 +237,12 @@ def processing(signal_info: dict, conf: dict, body: dict) -> List[dict]:
         pagenum = re.findall(pat, blob)[0]
 
         for signal_name, d in processed.items():
+            # Save backup
             store_filename = f"{conf['storage']['processed']}/{signal_name}/{_get_dt_str(1)}/page_{pagenum}_{_get_dt_str(2)}.json"  # noqa: E501
+            _save_blob(d, store_filename, conf["storage"]["container"], conn_str)
 
+            # Save for later loading
+            store_filename = f"{signal_name}/now/page_{pagenum}_{_get_dt_str(1)}_{_get_dt_str(2)}.json"
             _save_blob(d, store_filename, conf["storage"]["container"], conn_str)
 
             # Update last_rowstamp

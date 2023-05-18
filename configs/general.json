@@ -24,7 +24,7 @@
     },
     "prod": {
       "DefaultEndpointsProtocol": "https",
-      "AccountName": "spvbstorageprodv2",
+      "AccountName": "spvbastorageprodv2",
       "AccountKey": "X3dyQa1+cxOlZOL+DUmxb7KFR9/JKMzW3c1vIhKjveXuucW5C6g13HWvOsVYnEaof2IdkYpkxi528tEukclWSQ==",
       "EndpointSuffix": "core.windows.net"
     },

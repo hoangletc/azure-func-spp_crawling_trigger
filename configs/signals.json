@@ -90,6 +90,7 @@
     ]
   },
   "BI_ITEM": {
+    "api_name": "BI_ITEM",
     "fields": [
       "description",
       "iskit",
