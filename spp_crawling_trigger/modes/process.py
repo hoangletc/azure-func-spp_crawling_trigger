@@ -6,6 +6,13 @@ from . import utils
 
 def _parser(name: str, d: List[dict], signal_info: dict) -> dict:
     def parse(r, fields: set):
+        if "_imagelibref" in r:
+            del r["_imagelibref"]
+        if "href" in r:
+            del r["href"]
+        if "localref" in r:
+            del r["localref"]
+
         entry = {**r}
 
         existing_fields = set(r.keys())
@@ -34,7 +41,7 @@ def _parser(name: str, d: List[dict], signal_info: dict) -> dict:
                     out["BI_ASSETANCESTOR"].append(p)
 
             out[name].append(p_asset)
-        if name == "BI_INVE":
+        elif name == "BI_INVE":
             p_inve = parse(x, signal_info["BI_INVE"]["fields"])
 
             if "invcost" in x:

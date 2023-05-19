@@ -194,6 +194,16 @@
     ],
     "prober_field": "inventoryid"
   },
+  "BI_INVCOST": {
+    "fields": [
+      "condrate",
+      "lastcost",
+      "avgcost",
+      "invcostid",
+      "orgid",
+      "stdcost"
+    ]
+  },
   "BI_INVT": {
     "api_name": "BI_INVT",
     "fields": [
