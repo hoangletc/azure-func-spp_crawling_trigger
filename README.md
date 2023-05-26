@@ -80,10 +80,9 @@ This module reads all rowstamp configuration files.
     "mode_funcapp": "collect_rowstamp",
     "environment": <from environment argument> | prod
 }
+```
+## 2. List các API có thể craw
 
-
-
-## 2. List các API có thể crawl
 ```
 [
     'BI_MATU',
